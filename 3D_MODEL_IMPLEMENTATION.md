@@ -119,8 +119,8 @@ public/storage/
 - Console logging for debugging
 
 ## Dependencies
-- three: ^0.170.0
-- @types/three: ^0.170.0
+- three: ^0.182.0
+- @types/three: ^0.182.0
 
 Installed via: `npm install three @types/three`
 
