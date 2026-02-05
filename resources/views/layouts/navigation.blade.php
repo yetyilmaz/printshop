@@ -4,8 +4,9 @@
         <div class="flex items-center justify-between h-[72px]">
             <!-- Logo (Left) -->
             <div class="flex-1 flex items-center">
-                <a href="{{ route('home') }}" class="text-[20px] font-[650] tracking-[-0.02em] text-black">
-                    PrintLab<span class="opacity-40">.</span>
+                <a href="{{ route('home') }}" class="text-[24px] font-[650] tracking-[-0.02em] text-black flex items-end gap-1">
+                    <span style="font-family: 'Segoe Script', 'Segoe UI', cursive; font-style: italic; color: #d81010; line-height: 1;">René</span>
+                    <span style="font-family: 'Courier New', Courier, monospace; color: #050505; line-height: 1;">print</span>
                 </a>
             </div>
 

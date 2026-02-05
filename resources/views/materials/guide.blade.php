@@ -14,27 +14,38 @@
         </div>
 
         <!-- Materials Grid -->
-        @if($materials->isNotEmpty())
+        @if(!empty($materials))
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             @foreach($materials as $material)
+            @php
+                $specs = $material['specs'];
+            @endphp
             <div class="glass-card p-6 hover:bg-white/70 transition-all duration-300 border border-gray-200">
                 <!-- Material Header -->
-                <div class="flex items-start justify-between mb-5">
-                    <div>
-                        <h2 class="text-2xl font-[650] tracking-[-0.02em] mb-2">{{ $material->name }}</h2>
-                        <div class="inline-block px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-xs font-medium text-blue-700">
-                            {{ $material->type }}
+                <div class="flex items-center justify-between gap-4 mb-5">
+                    <div class="flex items-center gap-4">
+                        <div class="w-20 h-20 rounded-[20px] border border-black/5 overflow-hidden bg-gradient-to-br from-white to-gray-100 shadow-sm flex items-center justify-center">
+                            <img src="{{ asset($specs['image_path']) }}" alt="{{ $material['name'] }}" class="object-cover w-full h-full">
                         </div>
-                    </div>
-                    <div class="text-right">
-                        <div class="text-2xl font-[650] text-blue-600">{{ number_format($material->price_per_cm3, 2) }} ₸</div>
-                        <div class="text-xs text-black/50">за см³</div>
+                        <div>
+                            <h2 class="text-2xl font-[650] tracking-[-0.02em] mb-2">{{ $material['name'] }}</h2>
+                            <div class="inline-block px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-xs font-medium text-blue-700">
+                                {{ $material['type'] }}
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                @php
-                $specs = app(\App\Services\MaterialSpecsService::class)->getSpecs($material->type);
-                @endphp
+                @if(!empty($specs['properties']))
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+                    @foreach($specs['properties'] as $property)
+                    <div class="rounded-[16px] border border-black/5 bg-white/80 px-3 py-2 shadow-sm">
+                        <p class="text-[11px] uppercase tracking-[0.2em] text-black/40">{{ $property['label'] }}</p>
+                        <p class="text-sm font-[650] text-black mt-1">{{ $property['value'] }}</p>
+                    </div>
+                    @endforeach
+                </div>
+                @endif
 
                 <!-- Property Bars -->
                 <div class="space-y-3 mb-5">
