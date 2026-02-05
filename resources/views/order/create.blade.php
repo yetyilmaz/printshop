@@ -9,7 +9,6 @@
             'id' => (string) $m->id,
             'label' => $m->name,
             'price' => $m->price_per_cm3,
-            'multiplier' => $m->time_multiplier,
             'colors' => $m->colors->map(fn($c) => [
                 'id' => (string) $c->id, 
                 'name' => $c->name, 
@@ -18,7 +17,7 @@
         ])) !!};
     </script>
     <div x-data="{ 
-        tab: '{{ old('order_type', 'stl') }}',
+        tab: '{{ old('order_type', 'assist') }}',
         productType: '{{ old('product_type', 'Другое') }}',
         approxSize: '{{ old('approx_size', 'С ладонь') }}',
         fileName: '',
@@ -54,15 +53,15 @@
         <!-- Tab Switcher -->
         <div class="flex justify-center mb-12">
             <div class="inline-flex p-1.5 bg-black/5 rounded-[22px] border border-black/5">
-                <button @click="tab = 'stl'"
-                    :class="tab === 'stl' ? 'bg-white shadow-glass-sm text-black' : 'text-black/40 hover:text-black/60'"
-                    class="px-8 py-2.5 rounded-[18px] text-[13px] font-[650] transition-all duration-300">
-                    У меня есть 3D-модель (STL)
-                </button>
                 <button @click="tab = 'assist'"
                     :class="tab === 'assist' ? 'bg-white shadow-glass-sm text-black' : 'text-black/40 hover:text-black/60'"
                     class="px-8 py-2.5 rounded-[18px] text-[13px] font-[650] transition-all duration-300">
                     Нет модели / Нужна помощь
+                </button>
+                <button @click="tab = 'stl'"
+                    :class="tab === 'stl' ? 'bg-white shadow-glass-sm text-black' : 'text-black/40 hover:text-black/60'"
+                    class="px-8 py-2.5 rounded-[18px] text-[13px] font-[650] transition-all duration-300">
+                    У меня есть 3D-модель (STL)
                 </button>
             </div>
         </div>
@@ -88,8 +87,8 @@
 
                     <div class="mb-10">
                         <h1 class="text-[32px] font-[750] tracking-[-0.04em] text-black mb-3">Оформление заказа</h1>
-                        <p class="text-[15px] text-black/45 leading-relaxed max-w-[480px]">
-                            Загрузи STL и выбери параметры. Демо сохранит заказ в браузере и выдаст страницу оплаты.
+                        <p class="text-[15px] text-black/45 leading-relaxed max-w-[480px]" 
+                           x-text="tab === 'assist' ? 'Опишите заказ и загрузите чертежи/наброски. Наши специалисты помогут создать 3-D модель и подобрать материалы под ваш бюджет.' : 'Загрузите STL и выберите параметры. Сайт выдаст примерную цену на основе геометрии и материала.'">
                         </p>
                     </div>
 
@@ -142,9 +141,9 @@
                                     <div class="flex items-center gap-4">
                                         <div>
                                             <div class="font-[650] tracking-[-0.02em] text-[15px] text-black"
-                                                x-text="fileName || 'Перетащи файл сюда'"></div>
+                                                x-text="fileName || 'Перетащите файл сюда'"></div>
                                             <div class="text-[12px] text-black/45 mt-0.5"
-                                                x-text="fileSize || 'или выбери через кнопку справа • .stl'"></div>
+                                                x-text="fileSize || 'или выберите через кнопку справа • .stl'"></div>
                                         </div>
                                     </div>
                                     <div class="shrink-0">
@@ -159,7 +158,10 @@
                                         fileName = f.name;
                                         fileSize = (f.size / (1024*1024)).toFixed(2) + ' MB';
                                         $dispatch('file-selected', { size: f.size });
-                                        
+                                        if (window.updateDimensionState) {
+                                            window.updateDimensionState(null);
+                                        }
+
                                         // Initialize 3D Preview
                                         window.initStlPreview(f);
                                     }
@@ -314,14 +316,12 @@
                             this.selected = opt.id;
                             this.label = opt.label;
                             this.price = opt.price;
-                            this.multiplier = opt.multiplier;
                             this.open = false;
                             
                             let input = document.getElementById('material_id');
                             if(input) {
                                 input.value = opt.id;
                                 input.dataset.price = opt.price;
-                                input.dataset.multiplier = opt.multiplier;
                             }
                             
                             // Set global state for late-initializing components
@@ -602,7 +602,7 @@
 
                 <div class="space-y-4 pt-4">
                     <div class="flex justify-between items-center text-[13px] text-black/45">
-                        <span>Оценка веса / времени</span>
+                        <span>Оценка веса</span>
                         <span id="estSub" class="font-medium text-black">-</span>
                     </div>
                     <div class="flex justify-between items-center text-[13px] text-black/45">
@@ -610,10 +610,14 @@
                         <span id="discSub" class="font-medium text-black">-</span>
                     </div>
                     <div class="flex justify-between items-center pt-5 border-t border-black/5 mt-4">
-                        <span class="text-[15px] font-semibold text-black/60">Итого</span>
+                        <span class="text-[15px] font-semibold text-black/60">Примерная цена:</span>
                         <span id="price-display" class="text-[18px] font-bold text-black">-</span>
                     </div>
                 </div>
+
+                <div id="dimension-warning"
+                    class="hidden mt-4 rounded-[16px] border border-amber-200 bg-amber-50/80 px-4 py-3 text-[13px] text-amber-800 font-medium"
+                    aria-live="polite"></div>
 
                 <div class="pt-4">
                     <button type="submit"
@@ -672,6 +676,10 @@
         <!-- Hidden Inputs for actual form submission -->
         <input type="hidden" name="estimated_price" id="estimated_price" value="0">
         <input type="hidden" name="volume_cm3" id="volume_cm3" value="0">
+        <input type="hidden" name="bounding_x" id="bounding_x" value="0">
+        <input type="hidden" name="bounding_y" id="bounding_y" value="0">
+        <input type="hidden" name="bounding_z" id="bounding_z" value="0">
+        <input type="hidden" name="oversized_notice" id="oversized_notice" value="0">
         </form>
     </div> <!-- Closing Outer Container -->
 
@@ -726,8 +734,6 @@
             const materialPrice = parseFloat(materialSelect.dataset.price) || 
                                   parseFloat(materialSelect.selectedOptions?.[0]?.dataset.price) || 0;
             
-            const materialMultiplier = parseFloat(materialSelect.dataset.multiplier) ||
-                                       parseFloat(materialSelect.selectedOptions?.[0]?.dataset.multiplier) || 1.0;
             
             const volume = parseFloat(volumeInput.value) || 0;
             const quantity = parseInt(quantityInput.value) || 1;
@@ -739,13 +745,12 @@
                                      parseFloat(infillSelect.selectedOptions?.[0]?.dataset.multiplier) || 1.0;
 
             if (materialPrice > 0 && volume > 0) {
-                const itemCost = (volume * materialPrice * qualityMultiplier * infillMultiplier * materialMultiplier);
+                const itemCost = (volume * materialPrice * qualityMultiplier * infillMultiplier);
                 const totalCost = itemCost * quantity;
 
                 const weight = Math.round(volume * 1.25); // mock weight
-                const hours = Math.round(volume * 0.5 * qualityMultiplier * materialMultiplier); // weighted time
 
-                estSub.textContent = `${weight}г • ${hours}ч`;
+                estSub.textContent = `${weight}г`;
                 discSub.textContent = quantity >= 5 ? '8%' : '0%';
 
                 const finalPrice = quantity >= 5 ? totalCost * 0.92 : totalCost;
@@ -780,6 +785,64 @@
                 }
             }
         };
+
+        const MAX_PRINTER_DIMENSIONS = { x: 340, y: 320, z: 340 };
+
+        window.updateDimensionState = function(size) {
+            const warningEl = document.getElementById('dimension-warning');
+            const oversizeInput = document.getElementById('oversized_notice');
+            const boundingXEl = document.getElementById('bounding_x');
+            const boundingYEl = document.getElementById('bounding_y');
+            const boundingZEl = document.getElementById('bounding_z');
+
+            if (!warningEl || !oversizeInput) return;
+
+            const setValue = (el, value) => { if (el) el.value = value; };
+
+            if (!size) {
+                setValue(boundingXEl, '0');
+                setValue(boundingYEl, '0');
+                setValue(boundingZEl, '0');
+                oversizeInput.value = '0';
+                warningEl.classList.add('hidden');
+                warningEl.textContent = '';
+                return;
+            }
+
+            const actual = {
+                x: Math.max(0, size.x ?? 0),
+                y: Math.max(0, size.y ?? 0),
+                z: Math.max(0, size.z ?? 0)
+            };
+
+            setValue(boundingXEl, actual.x.toFixed(3));
+            setValue(boundingYEl, actual.y.toFixed(3));
+            setValue(boundingZEl, actual.z.toFixed(3));
+
+            const exceeded = [];
+            if (actual.x > MAX_PRINTER_DIMENSIONS.x) {
+                exceeded.push(`X (${actual.x.toFixed(1)} > ${MAX_PRINTER_DIMENSIONS.x})`);
+            }
+            if (actual.y > MAX_PRINTER_DIMENSIONS.y) {
+                exceeded.push(`Y (${actual.y.toFixed(1)} > ${MAX_PRINTER_DIMENSIONS.y})`);
+            }
+            if (actual.z > MAX_PRINTER_DIMENSIONS.z) {
+                exceeded.push(`Z (${actual.z.toFixed(1)} > ${MAX_PRINTER_DIMENSIONS.z})`);
+            }
+
+            const isOversized = exceeded.length > 0;
+            if (isOversized) {
+                oversizeInput.value = '1';
+                warningEl.classList.remove('hidden');
+                warningEl.innerHTML = `Модель превышает рабочий объём принтера (${exceeded.join(', ')}). Дополнительная помощь потребуется для печати.`;
+            } else {
+                oversizeInput.value = '0';
+                warningEl.classList.add('hidden');
+                warningEl.textContent = '';
+            }
+        };
+
+        window.updateDimensionState(null);
 
         const signedVolumeOfTriangle = (p1, p2, p3) => {
             return (p1.x * p2.y * p3.z - p1.x * p3.y * p2.z - p2.x * p1.y * p3.z + p2.x * p3.y * p1.z + p3.x * p1.y * p2.z - p3.x * p2.y * p1.z) / 6.0;
@@ -896,6 +959,9 @@
                 const boundingBox = geometry.boundingBox;
                 const size = new THREE.Vector3();
                 boundingBox.getSize(size);
+                if (window.updateDimensionState) {
+                    window.updateDimensionState(size);
+                }
                 const maxDim = Math.max(size.x, size.y, size.z);
                 const scale = 5 / maxDim; // Fit within 5 units
                 smallMesh.scale.set(scale, scale, scale);

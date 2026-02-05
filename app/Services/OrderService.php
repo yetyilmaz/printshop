@@ -28,6 +28,20 @@ class OrderService
             $materialId = null;
             $volumeCm3 = 0;
 
+            $requiresOversizedHelp = !empty($data['oversized_notice']);
+            $modelDimensions = null;
+            if ($isStl && (isset($data['bounding_x']) || isset($data['bounding_y']) || isset($data['bounding_z']))) {
+                $modelDimensions = [
+                    'x' => isset($data['bounding_x']) ? (float) $data['bounding_x'] : null,
+                    'y' => isset($data['bounding_y']) ? (float) $data['bounding_y'] : null,
+                    'z' => isset($data['bounding_z']) ? (float) $data['bounding_z'] : null,
+                ];
+                $modelDimensions = array_filter($modelDimensions, fn($value) => $value !== null);
+                if (empty($modelDimensions)) {
+                    $modelDimensions = null;
+                }
+            }
+
             if ($isStl) {
                 $materialId = $data['material_id'];
                 $volumeCm3 = $data['volume_cm3'];
@@ -40,16 +54,22 @@ class OrderService
                     ->first();
                 $qualityMultiplier = $qualitySetting ? $qualitySetting->multiplier : 1.0;
 
+                $infillPercent = max(0, min(100, (int) ($data['infill'] ?? 20)));
                 $infillSetting = CalculatorSetting::where('category', 'infill')
-                    ->where('slug', (string)($data['infill'] ?? '20'))
+                    ->where('slug', (string) $infillPercent)
                     ->first();
                 $infillMultiplier = $infillSetting ? $infillSetting->multiplier : 1.0;
 
-                $itemPrice = ($volumeCm3 * $material->price_per_cm3 * $qualityMultiplier * $infillMultiplier * $material->time_multiplier);
+                $effectiveVolume = $volumeCm3 * ($infillPercent / 100);
+                $baseCost = $effectiveVolume * $material->price_per_cm3;
+                $itemPrice = $baseCost * $qualityMultiplier * $infillMultiplier;
                 $calculatedTotalPrice = $itemPrice * $data['quantity'];
             }
 
             // 2. Create Order
+            $orderStatus = $isStl ? ($requiresOversizedHelp ? 'needs_review' : 'quoted') : 'needs_review';
+            $adminNotes = $requiresOversizedHelp ? 'Модель выходит за пределы объёма рабочего стола принтера; требуется ручная проверка.' : null;
+
             $order = Order::create([
                 'user_id' => $userId,
                 'contact_info' => [
@@ -59,10 +79,13 @@ class OrderService
                     'product_type' => $data['product_type'] ?? null,
                     'approx_size' => $data['approx_size'] ?? null,
                     'description' => $data['description'] ?? null,
+                    'model_dimensions' => $modelDimensions,
+                    'oversized_notice' => $requiresOversizedHelp,
                 ],
                 // For assist, price is 0 (quote needed). For STL, we calculated it.
                 'total_price' => $isStl ? $calculatedTotalPrice : 0, 
-                'status' => $isStl ? 'quoted' : 'needs_review',
+                'status' => $orderStatus,
+                'admin_notes' => $adminNotes,
             ]);
 
             // 3. Handle STL File & Item

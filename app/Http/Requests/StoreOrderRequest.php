@@ -35,6 +35,10 @@ class StoreOrderRequest extends FormRequest
             'infill' => 'exclude_unless:order_type,stl|required|integer|in:10,20,40,60,80,100',
             'quality' => 'exclude_unless:order_type,stl|required|string|in:standard,high,draft',
             'estimated_price' => 'exclude_unless:order_type,stl|required|numeric',
+            'bounding_x' => 'exclude_unless:order_type,stl|nullable|numeric|min:0',
+            'bounding_y' => 'exclude_unless:order_type,stl|nullable|numeric|min:0',
+            'bounding_z' => 'exclude_unless:order_type,stl|nullable|numeric|min:0',
+            'oversized_notice' => 'exclude_unless:order_type,stl|nullable|boolean',
             // Assist specific
             'product_type' => 'exclude_unless:order_type,assist|nullable|string',
             'approx_size' => 'exclude_unless:order_type,assist|nullable|string',
