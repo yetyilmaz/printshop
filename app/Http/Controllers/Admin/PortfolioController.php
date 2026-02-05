@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\PortfolioItem;
 use App\Models\PortfolioCategory;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class PortfolioController extends Controller
 {
@@ -100,21 +101,23 @@ class PortfolioController extends Controller
             'description' => 'nullable|string',
             'featured' => 'nullable|boolean',
             'glb_model' => 'nullable|file|mimetypes:model/gltf-binary,application/octet-stream|max:10240',
-            'images.*' => 'image|mimes:jpeg,png,jpg,webp|max:2048'
+            'images.*' => 'image|mimes:jpeg,png,jpg,webp|max:2048',
+            'delete_images' => 'array',
+            'delete_images.*' => 'integer'
         ]);
 
         // Handle GLB model upload
         if ($request->hasFile('glb_model')) {
             // Delete old model file if it exists
             if ($portfolio->glb_model) {
-                \Storage::disk('public')->delete($portfolio->glb_model);
+                Storage::disk('public')->delete($portfolio->glb_model);
             }
             $validated['glb_model'] = $request->file('glb_model')->store('models', 'public');
         }
 
         // Handle GLB model deletion
         if ($request->has('delete_glb_model') && $portfolio->glb_model) {
-            \Storage::disk('public')->delete($portfolio->glb_model);
+            Storage::disk('public')->delete($portfolio->glb_model);
             $validated['glb_model'] = null;
         }
 
@@ -136,7 +139,13 @@ class PortfolioController extends Controller
 
         // Handle deletion of images if needed (could be array of IDs to delete)
         if ($request->has('delete_images')) {
-            \App\Models\PortfolioImage::whereIn('id', $request->delete_images)->delete();
+            $imagesToDelete = $portfolio->images()
+                ->whereIn('id', $request->delete_images)
+                ->get();
+            foreach ($imagesToDelete as $image) {
+                Storage::disk('public')->delete($image->path);
+                $image->delete();
+            }
         }
 
         return redirect()->route('admin.portfolio.index')->with('success', 'Portfolio item updated.');
@@ -148,8 +157,14 @@ class PortfolioController extends Controller
     public function destroy(string $id)
     {
         $portfolio = \App\Models\PortfolioItem::findOrFail($id);
-        // Images should be deleted via cascade in DB, but files need manual deletion if not using observing.
-        // For MVP, letting them stay in storage or cleaning up.
+        if ($portfolio->glb_model) {
+            Storage::disk('public')->delete($portfolio->glb_model);
+        }
+
+        foreach ($portfolio->images as $image) {
+            Storage::disk('public')->delete($image->path);
+        }
+
         // Note: DB migration has cascadeOnDelete for PortfolioImage table.
         $portfolio->delete();
 

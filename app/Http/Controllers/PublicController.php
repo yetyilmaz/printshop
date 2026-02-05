@@ -48,7 +48,7 @@ class PublicController extends Controller
 
     public function materialsGuide()
     {
-        $materials = \Illuminate\Support\Facades\Cache::remember('materials_guide', 86400, function () {
+        $materials = \Illuminate\Support\Facades\Cache::remember('materials_guide', config('portfolio.materials_cache_ttl'), function () {
             return \App\Models\Material::orderBy('type')->orderBy('name')->get();
         });
         

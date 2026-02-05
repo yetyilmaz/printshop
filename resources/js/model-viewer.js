@@ -56,13 +56,15 @@ export class ModelViewer {
         directionalLight2.position.set(-5, -5, -5);
         this.scene.add(directionalLight2);
         
+        this.boundOnWindowResize = this.onWindowResize.bind(this);
+
         // Event listeners
         if (this.options.enableInteraction) {
             this.setupInteraction();
         }
         
         // Handle window resize
-        window.addEventListener('resize', () => this.onWindowResize());
+        window.addEventListener('resize', this.boundOnWindowResize);
     }
     
     loadModel(url) {
@@ -85,7 +87,7 @@ export class ModelViewer {
                     const size = box.getSize(new THREE.Vector3());
                     
                     const maxDim = Math.max(size.x, size.y, size.z);
-                    const scale = 2 / maxDim;
+                    const scale = maxDim > 0 ? 2 / maxDim : 1;
                     this.model.scale.setScalar(scale);
                     
                     this.model.position.x = -center.x * scale;
@@ -110,13 +112,11 @@ export class ModelViewer {
     
     setupInteraction() {
         const canvas = this.renderer.domElement;
-        
-        canvas.addEventListener('mousedown', (e) => {
+        this.boundOnMouseDown = (e) => {
             this.isDragging = true;
             this.previousMouse = { x: e.clientX, y: e.clientY };
-        });
-        
-        canvas.addEventListener('mousemove', (e) => {
+        };
+        this.boundOnMouseMove = (e) => {
             if (!this.isDragging) return;
             
             const deltaX = e.clientX - this.previousMouse.x;
@@ -126,18 +126,14 @@ export class ModelViewer {
             this.rotation.x += deltaY * 0.01;
             
             this.previousMouse = { x: e.clientX, y: e.clientY };
-        });
-        
-        canvas.addEventListener('mouseup', () => {
+        };
+        this.boundOnMouseUp = () => {
             this.isDragging = false;
-        });
-        
-        canvas.addEventListener('mouseleave', () => {
+        };
+        this.boundOnMouseLeave = () => {
             this.isDragging = false;
-        });
-        
-        // Touch events for mobile
-        canvas.addEventListener('touchstart', (e) => {
+        };
+        this.boundOnTouchStart = (e) => {
             if (e.touches.length === 1) {
                 this.isDragging = true;
                 this.previousMouse = { 
@@ -145,9 +141,8 @@ export class ModelViewer {
                     y: e.touches[0].clientY 
                 };
             }
-        });
-        
-        canvas.addEventListener('touchmove', (e) => {
+        };
+        this.boundOnTouchMove = (e) => {
             if (!this.isDragging || e.touches.length !== 1) return;
             
             const deltaX = e.touches[0].clientX - this.previousMouse.x;
@@ -160,19 +155,29 @@ export class ModelViewer {
                 x: e.touches[0].clientX, 
                 y: e.touches[0].clientY 
             };
-        });
-        
-        canvas.addEventListener('touchend', () => {
+        };
+        this.boundOnTouchEnd = () => {
             this.isDragging = false;
-        });
+        };
+        this.boundOnWheel = (e) => {
+            e.preventDefault();
+            const delta = e.deltaY * 0.001;
+            this.camera.position.z = Math.max(2, Math.min(10, this.camera.position.z + delta));
+        };
+        
+        canvas.addEventListener('mousedown', this.boundOnMouseDown);
+        canvas.addEventListener('mousemove', this.boundOnMouseMove);
+        canvas.addEventListener('mouseup', this.boundOnMouseUp);
+        canvas.addEventListener('mouseleave', this.boundOnMouseLeave);
+        
+        // Touch events for mobile
+        canvas.addEventListener('touchstart', this.boundOnTouchStart);
+        canvas.addEventListener('touchmove', this.boundOnTouchMove);
+        canvas.addEventListener('touchend', this.boundOnTouchEnd);
         
         // Zoom with mouse wheel
         if (this.options.enableZoom) {
-            canvas.addEventListener('wheel', (e) => {
-                e.preventDefault();
-                const delta = e.deltaY * 0.001;
-                this.camera.position.z = Math.max(2, Math.min(10, this.camera.position.z + delta));
-            });
+            canvas.addEventListener('wheel', this.boundOnWheel);
         }
     }
     
@@ -205,6 +210,24 @@ export class ModelViewer {
         if (this.animationId) {
             cancelAnimationFrame(this.animationId);
         }
+
+        if (this.options.enableInteraction && this.renderer?.domElement) {
+            const canvas = this.renderer.domElement;
+            canvas.removeEventListener('mousedown', this.boundOnMouseDown);
+            canvas.removeEventListener('mousemove', this.boundOnMouseMove);
+            canvas.removeEventListener('mouseup', this.boundOnMouseUp);
+            canvas.removeEventListener('mouseleave', this.boundOnMouseLeave);
+            canvas.removeEventListener('touchstart', this.boundOnTouchStart);
+            canvas.removeEventListener('touchmove', this.boundOnTouchMove);
+            canvas.removeEventListener('touchend', this.boundOnTouchEnd);
+            if (this.options.enableZoom) {
+                canvas.removeEventListener('wheel', this.boundOnWheel);
+            }
+        }
+
+        if (this.boundOnWindowResize) {
+            window.removeEventListener('resize', this.boundOnWindowResize);
+        }
         
         if (this.renderer) {
             this.renderer.dispose();
@@ -214,7 +237,26 @@ export class ModelViewer {
         }
         
         if (this.model) {
+            this.model.traverse((child) => {
+                if (child.isMesh) {
+                    child.geometry?.dispose();
+                    if (Array.isArray(child.material)) {
+                        child.material.forEach((material) => this.disposeMaterial(material));
+                    } else if (child.material) {
+                        this.disposeMaterial(child.material);
+                    }
+                }
+            });
             this.scene.remove(this.model);
         }
+    }
+
+    disposeMaterial(material) {
+        Object.values(material).forEach((value) => {
+            if (value?.isTexture) {
+                value.dispose();
+            }
+        });
+        material.dispose();
     }
 }
