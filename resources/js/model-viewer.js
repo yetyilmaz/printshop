@@ -237,7 +237,26 @@ export class ModelViewer {
         }
         
         if (this.model) {
+            this.model.traverse((child) => {
+                if (child.isMesh) {
+                    child.geometry?.dispose();
+                    if (Array.isArray(child.material)) {
+                        child.material.forEach((material) => this.disposeMaterial(material));
+                    } else if (child.material) {
+                        this.disposeMaterial(child.material);
+                    }
+                }
+            });
             this.scene.remove(this.model);
         }
+    }
+
+    disposeMaterial(material) {
+        Object.values(material).forEach((value) => {
+            if (value?.isTexture) {
+                value.dispose();
+            }
+        });
+        material.dispose();
     }
 }
