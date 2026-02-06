@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Services\PortfolioService;
 use App\Services\MaterialSpecsService;
 use App\Repositories\PortfolioRepository;
+use Illuminate\Support\Facades\Cache;
 
 class PublicController extends Controller
 {
@@ -48,10 +49,9 @@ class PublicController extends Controller
 
     public function materialsGuide()
     {
-        $materials = \Illuminate\Support\Facades\Cache::remember('materials_guide', config('portfolio.materials_cache_ttl'), function () {
-            return \App\Models\Material::orderBy('type')->orderBy('name')->get();
-        });
-        
+        $materials = Cache::remember('materials_guide', config('portfolio.materials_cache_ttl'), fn () =>
+            $this->materialSpecsService->getAllMaterials()
+        );
         return view('materials.guide', compact('materials'));
     }
 }

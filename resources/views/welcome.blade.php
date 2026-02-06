@@ -110,15 +110,34 @@
         @endif
 
         <!-- Bottom Callout -->
-        <section class="glass-card p-6 flex flex-wrap justify-between items-center gap-4">
+        <section class="glass-card p-6 flex flex-col gap-4">
             <div>
                 <div class="font-[650] text-base tracking-[-0.02em]">Готовы начать работу над проектом?</div>
-                <div class="text-[13px] text-black/60 mt-1">Загрузите модель или опишите задачу — получите расчёт стоимости и сроков. Свяжемся в течение часа для уточнения деталей заказа.</div>
+                <div class="text-[13px] text-black/60 mt-1">Свяжитесь с нами в удобном мессенджере — быстро ответим и поможем оформить заказ.</div>
             </div>
-            <a href="{{ route('order.create') }}"
-                class="btn-primary inline-flex items-center justify-center gap-2.5 rounded-[18px] px-5 py-2.5 text-[13px] font-medium transition-all active:scale-[0.98]">
-                Создать заказ
-            </a>
+            <div class="grid gap-3 sm:grid-cols-3">
+                <a href="https://t.me/reneprint" class="rounded-[16px] border border-black/10 bg-white/70 px-4 py-3 text-sm font-semibold text-black/80 hover:border-black/30 hover:shadow-lg transition">
+                    <div class="flex items-center gap-2">
+                        <img src="/images/icons/Telegram_2019_Logo.svg" alt="Telegram" class="w-4 h-4">
+                        <span>Telegram</span>
+                    </div>
+                    <span class="text-[12px] text-gray-500">@reneprint</span>
+                </a>
+                <a href="https://wa.me/77066071331" class="rounded-[16px] border border-black/10 bg-white/70 px-4 py-3 text-sm font-semibold text-black/80 hover:border-black/30 hover:shadow-lg transition">
+                    <div class="flex items-center gap-2">
+                        <img src="/images/icons/WhatsApp.svg" alt="WhatsApp" class="w-4 h-4">
+                        <span>Whatsapp</span>
+                    </div>
+                    <span class="text-[12px] text-gray-500">+7 706 607 1331</span>
+                </a>
+                <a href="mailto:orders@reneprint.com" class="rounded-[16px] border border-black/10 bg-white/70 px-4 py-3 text-sm font-semibold text-black/80 hover:border-black/30 hover:shadow-lg transition">
+                    <div class="flex items-center gap-2">
+                        <img src="/images/icons/Email.svg" alt="Email" class="w-4 h-4">
+                        <span>E-mail</span>
+                    </div>
+                    <span class="text-[12px] text-gray-500">orders@reneprint.com</span>
+                </a>
+            </div>
         </section>
 
         <!-- Footer -->

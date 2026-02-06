@@ -50,7 +50,9 @@ class PortfolioController extends Controller
             'description' => 'nullable|string',
             'featured' => 'nullable|boolean',
             'glb_model' => 'nullable|file|mimetypes:model/gltf-binary,application/octet-stream|max:10240',
-            'images.*' => 'image|mimes:jpeg,png,jpg,webp|max:2048'
+            'images.*' => 'image|mimes:jpeg,png,jpg,webp|max:2048',
+            'delete_images' => 'array',
+            'delete_images.*' => 'integer'
         ]);
 
         // Handle GLB model upload

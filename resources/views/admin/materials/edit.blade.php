@@ -19,24 +19,46 @@
                     @error('name') <p class="text-red-500 text-[11px] mt-1 pl-1">{{ $message }}</p> @enderror
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div class="grid gap-3 sm:grid-cols-3"
+                    x-data="{
+                        pricePerKg: @json(old('price_per_kg', $material->price_per_kg ?? 0)),
+                        density: @json(old('material_density', $material->material_density ?? 1.2)),
+                        pricePerCm3: @json(old('price_per_cm3', $material->price_per_cm3 ?? 0)),
+                        updatePrice() {
+                            const base = (Number(this.pricePerKg) || 0) * (Number(this.density) || 0) / 1000;
+                            const computed = base * 5.0;
+                            this.pricePerCm3 = parseFloat(computed.toFixed(4)) || 0;
+                        }
+                    }"
+                    x-init="updatePrice()">
                     <div>
-                        <label for="price_per_cm3" class="block text-[12px] text-black/45 mb-2 pl-1">Price
-                            (₸/cm³)</label>
+                        <label for="price_per_kg" class="block text-[12px] text-black/45 mb-2 pl-1">Price per kg spool (₸)</label>
+                        <input type="number" id="price_per_kg" name="price_per_kg"
+                            x-model.number="pricePerKg"
+                            @input="updatePrice()"
+                            step="0.01" class="input-glass h-[52px] px-5 focus:ring-0">
+                        @error('price_per_kg') <p class="text-red-500 text-[11px] mt-1 pl-1">{{ $message }}</p> @enderror
+                        <p class="text-[10px] text-black/50 mt-1">Enter the reel price and the form will derive the cm³ rate automatically.</p>
+                    </div>
+
+                    <div>
+                        <label for="material_density" class="block text-[12px] text-black/45 mb-2 pl-1">Density (g/cm³)</label>
+                        <input type="number" id="material_density" name="material_density"
+                            x-model.number="density"
+                            @input="updatePrice()"
+                            step="0.01" class="input-glass h-[52px] px-5 focus:ring-0">
+                        @error('material_density') <p class="text-red-500 text-[11px] mt-1 pl-1">{{ $message }}</p> @enderror
+                        <p class="text-[10px] text-black/50 mt-1">Density drives the conversion from spool weight to volume.</p>
+                    </div>
+
+                    <div>
+                        <label for="price_per_cm3" class="block text-[12px] text-black/45 mb-2 pl-1">Price (₸/cm³)</label>
                         <input type="number" id="price_per_cm3" name="price_per_cm3"
-                            value="{{ old('price_per_cm3', $material->price_per_cm3) }}" step="0.01" required
-                            class="input-glass h-[52px] px-5 focus:ring-0">
+                            x-model.number="pricePerCm3"
+                            step="0.0001" required class="input-glass h-[52px] px-5 focus:ring-0" readonly>
                         @error('price_per_cm3') <p class="text-red-500 text-[11px] mt-1 pl-1">{{ $message }}</p>
                         @enderror
-                    </div>
-                    <div>
-                        <label for="time_multiplier" class="block text-[12px] text-black/45 mb-2 pl-1">Time
-                            Multiplier</label>
-                        <input type="number" id="time_multiplier" name="time_multiplier"
-                            value="{{ old('time_multiplier', $material->time_multiplier) }}" step="0.1" required
-                            class="input-glass h-[52px] px-5 focus:ring-0">
-                        @error('time_multiplier') <p class="text-red-500 text-[11px] mt-1 pl-1">{{ $message }}</p>
-                        @enderror
+                        <p class="text-[10px] text-black/50 mt-1">This field updates based on the spool price and density.</p>
                     </div>
                 </div>
 

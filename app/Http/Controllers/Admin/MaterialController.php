@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Material;
 use App\Models\Color;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 
 class MaterialController extends Controller
@@ -25,18 +26,23 @@ class MaterialController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'price_per_cm3' => 'required|numeric|min:0',
-            'time_multiplier' => 'required|numeric|min:0.1',
+            'price_per_kg' => 'required|numeric|min:0',
+            'material_density' => 'required|numeric|gt:0',
             'type' => 'nullable|string|max:255',
-            // 'colors' is now an array of objects
             'colors' => 'array',
             'colors.*.name' => 'required|string|max:255',
             'colors.*.hex' => 'required|string|max:20',
         ]);
 
         $validated['slug'] = Str::slug($validated['name']);
+        $validated['price_per_cm3'] = $this->derivePricePerCm3($validated['price_per_kg'], $validated['material_density']);
+        
+        // Ensure default type if null
+        if (empty($validated['type'])) {
+            $validated['type'] = Str::slug($validated['name']);
+        }
 
-        $material = Material::create(\Illuminate\Support\Arr::except($validated, ['colors']));
+        $material = Material::create(Arr::except($validated, ['colors']));
         
         if (isset($validated['colors'])) {
             foreach ($validated['colors'] as $colorData) {
@@ -60,8 +66,8 @@ class MaterialController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'price_per_cm3' => 'required|numeric|min:0',
-            'time_multiplier' => 'required|numeric|min:0.1',
+            'price_per_kg' => 'required|numeric|min:0',
+            'material_density' => 'required|numeric|gt:0',
             'type' => 'nullable|string|max:255',
             'colors' => 'array',
             'colors.*.id' => 'nullable|integer',
@@ -70,8 +76,9 @@ class MaterialController extends Controller
         ]);
 
         $validated['slug'] = Str::slug($validated['name']);
+        $validated['price_per_cm3'] = $this->derivePricePerCm3($validated['price_per_kg'], $validated['material_density']);
 
-        $material->update(\Illuminate\Support\Arr::except($validated, ['colors']));
+        $material->update(Arr::except($validated, ['colors']));
 
         if (isset($validated['colors'])) {
             // Get IDs present in the form
@@ -107,4 +114,10 @@ class MaterialController extends Controller
         $material->delete();
         return redirect()->route('admin.materials.index')->with('success', 'Material deleted successfully.');
     }
+
+        private function derivePricePerCm3(float $pricePerKg, float $density): float
+        {
+            $base = ($pricePerKg * $density) / 1000;
+            return round($base * 5.0, 4);
+        }
 }
