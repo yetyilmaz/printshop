@@ -146,8 +146,8 @@
                     <template x-if="selectedProject && selectedProject.glb_model">
                         <div class="absolute bottom-4 left-4 bg-black/60 text-white px-4 py-2 text-sm"
                              style="border-radius: 12px;">
-                            <span class="block">🖋️ Перетащите чтобы повернуть</span>
-                            <span class="block">🖋️ Прокрутите чтобы увеличить</span>
+                            <span class="block">ЛКМ — вращение ПКМ — перемещение</span>
+                            <span class="block">колесо — масштаб</span>
                         </div>
                     </template>
                 </div>
@@ -207,7 +207,6 @@
 
                 <!-- Footer -->
                 <div class="px-8 py-4 border-t border-gray-100 bg-gray-50 flex justify-between items-center">
-                    <p class="text-[12px] font-medium text-gray-500">ЛКМ — вращение • ПКМ — перемещение • колесо — масштаб</p>
                     <div class="flex gap-3">
                         <a href="{{ route('order.create') }}" class="px-5 py-2.5 bg-black text-white text-[13px] font-semibold hover:bg-black/80 transition-colors shadow-lg shadow-black/10" style="border-radius: 16px;">Заказать похожий проект</a>
                         <button @click="closeProject" class="px-5 py-2.5 border border-gray-200 text-gray-600 hover:border-black hover:text-black transition-colors" style="border-radius: 16px;">Закрыть</button>
