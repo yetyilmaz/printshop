@@ -38,7 +38,8 @@ class PublicController extends Controller
         // Transform items for JavaScript
         $projectsData = $this->portfolioService->transformItems($items);
 
-        return view('portfolio.index', compact('items', 'categories', 'projectsData'));
+        $selectedCategory = null;
+        return view('portfolio.index', compact('items', 'categories', 'projectsData', 'selectedCategory'));
     }
 
     public function portfolioItem($slug)
