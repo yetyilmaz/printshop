@@ -32,6 +32,8 @@ class TelegramChannel
             'parse_mode' => 'HTML',
         ]);
 
+        Log::info('Telegram response: ' . $response->body());
+
         if (!$response->successful()) {
             Log::error('Telegram API Error: ' . $response->body());
         }

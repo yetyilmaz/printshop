@@ -14,6 +14,8 @@ class PortfolioItem extends Model
         'featured' => 'boolean',
     ];
 
+    protected $appends = ['image'];
+
     protected static function boot()
     {
         parent::boot();
@@ -32,5 +34,14 @@ class PortfolioItem extends Model
     public function category()
     {
         return $this->belongsTo(PortfolioCategory::class, 'category_id');
+    }
+
+    public function getImageAttribute(): ?string
+    {
+        if ($this->relationLoaded('images')) {
+            return optional($this->images->first())->path;
+        }
+
+        return $this->images()->limit(1)->value('path');
     }
 }

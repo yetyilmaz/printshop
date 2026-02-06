@@ -33,6 +33,19 @@
                         class="text-[13px] font-medium text-black/45 hover:text-black transition-colors {{ request()->routeIs('admin.calculator.*') ? 'text-black font-semibold' : '' }}">
                         Настройки калькулятора
                     </a>
+                @else
+                    <a href="{{ route('portfolio') }}"
+                        class="text-[13px] font-medium text-black/45 hover:text-black transition-colors {{ request()->routeIs('portfolio') ? 'text-black font-semibold' : '' }}">
+                        Портфолио
+                    </a>
+                    <a href="{{ route('materials.guide') }}"
+                        class="text-[13px] font-medium text-black/45 hover:text-black transition-colors {{ request()->routeIs('materials.guide') ? 'text-black font-semibold' : '' }}">
+                        Материалы
+                    </a>
+                    <a href="{{ route('order.create') }}"
+                        class="text-[13px] font-medium text-black/45 hover:text-black transition-colors {{ request()->routeIs('order.create') ? 'text-black font-semibold' : '' }}">
+                        Оформить заказ
+                    </a>
                 @endauth
             </div>
 

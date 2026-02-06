@@ -133,7 +133,7 @@
                                     <div class="p-5">
                                         <h4 class="font-bold text-lg mb-2 truncate">{{ $item->title }}</h4>
                                         <p class="text-gray-600 text-sm mb-2 line-clamp-2 min-h-[40px]">{{ $item->description ?? 'Нет описания' }}</p>
-                                        <p class="text-gray-500 text-xs mb-4">{{ $item->category->name }} • {{ $item->material }}</p>
+                                        <p class="text-gray-500 text-xs mb-4">{{ $item->category?->name ?? 'Без категории' }} • {{ $item->material }}</p>
                                         
                                         <div class="flex gap-2 pt-4 border-t border-gray-100">
                                             <a href="{{ route('admin.portfolio.edit', $item) }}" 
